@@ -114,21 +114,25 @@ if os.path.exists(fttpy):
         os.system('python %s %s' % (fttpy, ' '.join(args)))
         sys.exit(0)
     
-    ptt = subprocess.Popen(['/usr/bin/python', fttpy], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    ptt = subprocess.Popen(['/usr/bin/python', fttpy, "0"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     pbin = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     
     ploop = select.poll()
     ploop.register(pbin.stdout.fileno(), select.POLLIN)
     ploop.register(ptt.stdout.fileno(), select.POLLIN)
     while True:
+        if pbin.poll() or ptt.poll(): break
         for fd,evt in ploop.poll():
+            #print '!', fd, evt
             if fd == pbin.stdout.fileno():
-                b = pbin.stdout.read(4000)
+                b = pbin.stdout.readline()
                 if len(b) == 0: break
+                #print ">", b
                 ptt.stdin.write(b)
             if fd == ptt.stdout.fileno():
-                ptt.stdout.read(4000)
+                b = ptt.stdout.readline()
                 if len(b) == 0: break
+                #print "<", b
                 pbin.stdin.write(b)
     sys.exit(0)
 
