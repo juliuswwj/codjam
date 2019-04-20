@@ -3,28 +3,43 @@
 import os, sys, subprocess, select
 
 
+codes={
+    'sam' : '''
+''',
+
+    'gcd' : '''
+    ll gcd(ll a,ll b) { return b?gcd(b,a%b):a;}
+'''
+}
+
+
 if len(sys.argv) < 2:
-    print 'usage: run.py num'
+    print 'usage: run.py num [options]'
     sys.exit(1)
     
-
-cwd = os.getcwd().split('/')[-1]
-year = int( cwd[:4] )
-if year < 2010 or year > 2030:
-    print 'E: wrong year %d' % year
-    sys.exit(1)
-
 qid = 'a'
 tid = ''
-if year < 2018:
-    qid = sys.argv[1][0].lower()
-    if len(sys.argv[1]) > 1: tid = sys.argv[1][1].lower()
-else:
+
+cwd = os.getcwd().split('/')[-1]
+if cwd in ('hdu', 'poj', 'zoj'):
     qid = sys.argv[1]
+    if int(sys.argv[1]) < 10:
+        print 'E: wrong problem %s' % qid
+else:
+    year = int( cwd[:4] )
+    if year < 2010 or year > 2030:
+        print 'E: wrong year %d' % year
+        sys.exit(1)
+
+    if year < 2018:
+        qid = sys.argv[1][0].lower()
+        if len(sys.argv[1]) > 1: tid = sys.argv[1][1].lower()
+    else:
+        qid = sys.argv[1]
     
-if 'abcdef'.find(qid) < 0:
-    print 'E: qid should be abcdef'
-    sys.exit(1)
+    if 'abcdef'.find(qid) < 0:
+        print 'E: qid should be abcdef'
+        sys.exit(1)
     
 fcpp = '%s.cpp' % qid
 fpy = '%s.py' % qid
@@ -68,8 +83,6 @@ using namespace std;
 typedef vector<int> VI;
 typedef long long ll;
 typedef pair<int,int> PII;
-ll gcd(ll a,ll b) { return b?gcd(b,a%b):a;}
-// ------------------------
     ''' + clines
         changed = True
 
