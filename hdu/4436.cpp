@@ -1,4 +1,4 @@
-
+//+base
 #include <bits/stdc++.h>
 using namespace std;
 #define rep(i,a,n) for (int i=a;i<n;i++)
@@ -12,8 +12,8 @@ using namespace std;
 typedef vector<int> VI;
 typedef long long ll;
 typedef pair<int,int> PII;
-    
 
+//+sam
 template<char B='A', int BN=26>
 struct SAM {
     struct node {
@@ -97,10 +97,19 @@ struct SAM {
         }
         return s;
     }
+    void show(){
+        rep(i, 0, ss+1){
+            fprintf(stderr, "ns[%d] = {%d, %d, [%d, %d, %d, %d, %d, %d, %d, %d, %d, %d]}\n", i, ns[i].len, ns[i].rt, 
+                ns[i].next[0], ns[i].next[1], ns[i].next[2], ns[i].next[3], ns[i].next[4],
+                ns[i].next[5], ns[i].next[6], ns[i].next[7], ns[i].next[8], ns[i].next[9]
+                )
+            ;
+        }
+    }
 };
 
-
-int main2(){
+//+main
+int main(){
     const int MOD = 2012;
     int N;
     while( cin >> N ){
@@ -117,19 +126,22 @@ int main2(){
         sort(u.begin()+1, u.end(), [&](int a, int b){
             return sam[a].len < sam[b].len;
         });
+        sam.show();
+
         vector<int> f(sam.ss+1);
         vector<int> g(sam.ss+1);
         rep(i, 1, 10) if(sam[0].next[i]){
             f[ sam[0].next[i] ] = i;
-            g[ sam[0].next[i] ] = 1;
+            g[ sam[0].next[i] ] = 1;  // prefix count
         }
         int ans = 0;
         rep(i, 1, sam.ss+1){
             int ne = u[i];
+            fprintf(stderr, "f[%d]=%d\n", ne, f[ne]);
             ans = (ans + f[ne]) % MOD;
             rep(j, 0, 10){
                 int na = sam[ne].next[j];
-                if(na) {
+                if(na) {    
                     f[na] = (f[na] + f[ne]*10 + g[ne]*j) % MOD;
                     g[na] = (g[na] + g[ne]) % MOD;
                 }
@@ -141,18 +153,11 @@ int main2(){
 }
     
 
-int main(){
+int main1(){
     SAM<'0', 10> sam;
 
     sam.add("0912345678913579191");
 
-    rep(i, 0, sam.ss+1){
-        fprintf(stderr, "ns[%d] = {%d, %d, [%d, %d, %d, %d, %d, %d, %d, %d, %d, %d]}\n", i, sam[i].len, sam[i].rt, 
-            sam[i].next[0], sam[i].next[1], sam[i].next[2], sam[i].next[3], sam[i].next[4],
-            sam[i].next[5], sam[i].next[6], sam[i].next[7], sam[i].next[8], sam[i].next[9]
-            )
-        ;
-    }
 
     vector<int> cnt;
     sam.count(cnt);
@@ -161,3 +166,4 @@ int main(){
     cout << t << " " << cnt[t] << endl;
     return 0;
 }
+

@@ -3,16 +3,6 @@
 import os, sys, subprocess, select
 
 
-codes={
-    'sam' : '''
-''',
-
-    'gcd' : '''
-    ll gcd(ll a,ll b) { return b?gcd(b,a%b):a;}
-'''
-}
-
-
 if len(sys.argv) < 2:
     print 'usage: run.py num [options]'
     sys.exit(1)
@@ -48,48 +38,41 @@ fbin = '%s.bin' % qid
 fttpy = '%s-tt.py' % qid
 
 if not os.path.exists(fpy):
-    changed = True
-    clines = '''
-int solve(){
-    return 0;
-}
-int main(){
-    int T;
-    cin >> T;
-    cout.precision(12);
-    rep(t, 0, T) {
-        cout << "Case #" << (t+1) << ": " << solve() << endl;
-    }
-    return 0;
-}
-    '''
+    def readcpp(fname):
+        ret = []
+        with open(fname, 'r') as f:
+            name = 'main'
+            txt = ''
+            for line in f:
+                if line.startswith('//+'):
+                    if len(txt) > 0: ret.append( (name, txt.strip()) )
+                    name = line[3:].strip()
+                    txt = ''
+                else:
+                    txt += line
+            if len(txt) > 0: ret.append( (name, txt.strip()) )
+        return ret
+    
+    template = readcpp('../template.cpp')
+
+    origin = {}
     if os.path.exists(fcpp):
-        with open(fcpp, 'r') as f:
-            clines = f.read()
-            changed = False
+        for n,v in readcpp(fcpp):
+            origin[n] = v
 
-    if 'bits/stdc++.h' not in clines:
-        clines = '''
-#include <bits/stdc++.h>
-using namespace std;
-#define rep(i,a,n) for (int i=a;i<n;i++)
-#define per(i,a,n) for (int i=n-1;i>=a;i--)
-#define pb push_back
-#define mp make_pair
-#define all(x) (x).begin(),(x).end()
-#define fi first
-#define se second
-#define SIZE(x) ((int)(x).size())
-typedef vector<int> VI;
-typedef long long ll;
-typedef pair<int,int> PII;
-    ''' + clines
-        changed = True
-
+    txt = ''
+    changed = False
+    for n,v in template:
+        if n in origin:
+            txt += '//+%s\n%s\n\n' % (n, origin[n])
+            continue
+        if n in ('base', 'main') or ('+'+n) in sys.argv:
+            txt += '//+%s\n%s\n\n' % (n, v)
+            changed = True
 
     if changed:
         with open(fcpp, 'w') as f:
-            f.write(clines)
+            f.write(txt)
             
     opts = '-O2'
     if '-g' in sys.argv: opts = '-g'
