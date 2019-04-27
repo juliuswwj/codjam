@@ -7,13 +7,14 @@ if len(sys.argv) < 2:
     print 'usage: run.py num [options]'
     sys.exit(1)
     
-qid = 'a'
 tid = ''
+qid = sys.argv[1]
+if '.' in qid: 
+    qid = qid.split('.')[0]
 
 cwd = os.getcwd().split('/')[-1]
 if cwd in ('hdu', 'poj', 'zoj'):
-    qid = sys.argv[1]
-    if int(sys.argv[1]) < 10:
+    if int(qid) < 10:
         print 'E: wrong problem %s' % qid
 else:
     year = int( cwd[:4] )
@@ -22,10 +23,8 @@ else:
         sys.exit(1)
 
     if year < 2018:
-        qid = sys.argv[1][0].lower()
-        if len(sys.argv[1]) > 1: tid = sys.argv[1][1].lower()
-    else:
-        qid = sys.argv[1]
+        if len(qid) > 1: tid = qid[1].lower()
+        qid = qid[0].lower()
     
     if 'abcdef'.find(qid) < 0:
         print 'E: qid should be abcdef'

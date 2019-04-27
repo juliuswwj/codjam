@@ -1,5 +1,20 @@
 //+base
-#include <bits/stdc++.h>
+#include <cstring>
+#include <cstdio>
+#include <cstdlib>
+#include <cmath>
+#include <vector>
+#include <map>
+#include <list>
+#include <queue>
+#include <stack>
+#include <cctype>
+#include <string>
+#include <utility>
+#include <iostream>
+#include <algorithm>
+#include <limits>
+#include <functional>
 using namespace std;
 #define rep(i,a,n) for (int i=a;i<n;i++)
 #define per(i,a,n) for (int i=n-1;i>=a;i--)
@@ -15,6 +30,105 @@ typedef pair<int,int> PII;
 
 //+gcd
 ll gcd(ll a,ll b) { return b?gcd(b,a%b):a;}
+
+//+prime
+void getprime(int cnt, vector<int>& prime){
+    cnt = (cnt-1)/2;
+    prime.pb(2);
+    bool* flag = new bool[cnt];
+    rep(i, 0, cnt) flag[i] = true;
+    rep(i, 0, cnt) {
+        int v = i*2+3;
+        if(flag[i]) prime.pb(v);
+        rep(j, 1, prime.size()){
+            int idx = (v*prime[j]-3)/2;
+            if(idx >= cnt) break;
+            flag[idx] = false;
+            if(v%prime[j] == 0) break;
+        }
+    }
+    delete[] flag;
+}
+void getfactor(int n, map<int, int>& fs){
+    while(n % 2 == 0){
+        fs[2] += 1;
+        n /= 2;
+    }
+    vector<int> prime;
+    prime.pb(2);
+    int cnt = (int)sqrt(n)/2 + 1;
+    bool* flag = new bool[cnt];
+    rep(i, 0, cnt) flag[i] = true;
+    rep(i, 0, cnt) {
+        int v = i*2+3;
+        if(flag[i]){
+            while(n % v == 0){
+                fs[v] += 1;
+                n /= v;
+            }
+            if(n < v) break;
+            prime.pb(v);
+        }
+        rep(j, 1, prime.size()){
+            int idx = (v*prime[j]-3)/2;
+            if(idx >= cnt) break;
+            flag[idx] = false;
+            if(v%prime[j] == 0) break;
+        }
+    }
+    delete[] flag;
+    if(n != 1) fs[n] += 1;
+}
+
+//+mod
+ll pow(ll x, ll p, ll mod) {
+    ll ans = 1;
+    while (p > 0) {
+        if ((p & 1) == 1) ans = (ans * x) % mod;
+        p >>= 1;
+        x = (x * x) % mod;
+    }
+    return ans % mod;
+}
+ll inv(ll k, ll mod){ // k 乘法逆元
+    return pow(k, mod-2, mod);
+}
+
+//+comb
+struct COMB {
+    int n, i;
+    ll m;
+    COMB(int n, int c) : n(n), i(0), m( (1l<<c)-1 ) { }
+    bool next(){
+        while(i < n-1) {
+            if( ((m >> i) & 3) == 1 ){
+                m ^= 3l << i;
+                int c = 0;
+                rep(j, 0, i) if((m>>j) & 1) c += 1;
+                m &= ~((1l << i)-1);
+                m |= (1l<<c)-1;
+                i = 0;
+                return true;
+            }
+            i += 1;
+        }
+        return false;
+    }
+};
+ll combcnt(int n, int c) {
+    ll sum = 1;
+    rep(i, 1, c+1) sum = sum * (n-i+1) / i;
+    return sum;
+}
+double combprob(double P[], int n, int k){
+    vector<double> e(k+1);
+    e[0] = 1;
+    rep(i, 0, n){
+        double p = P[i];
+        per(j, 1, k+1) e[j] = (1-p)*e[j] + p*e[j-1];
+    }
+    return e[k];
+}
 
 
 //+sam
@@ -376,11 +490,375 @@ struct TARJAN {
     }
 };
 
+//+union
+struct UNION {
+    vector<int> pre;
+    vector<int> rank;
+
+    UNION(int N): pre(N), rank(N, 1){
+        rep(n, 0, N) pre[n] = n;
+    }
+
+    int find(int x){ // range [0..N-1]
+        int r = x;
+        while(r != pre[r]) r = pre[r];
+        int i = x;
+        while(i != r){
+            int j = pre[i];
+            pre[i] = r;
+            i = j;
+        }
+        return r;
+    }
+
+    int join(int x, int y){ // range [0..N-1]
+        x = find(x);
+        y = find(y);
+        if(x == y) return rank[x];
+        if(rank[x] > rank[y]){
+            pre[y] = x;
+            rank[x] += rank[y];
+            return rank[x];
+        } else {
+            pre[x] = y;
+            rank[y] += rank[x];
+            return rank[y];
+        }
+    }
+};
+
+//+segtree
+#define segtree_lson  l,m,rt<<1
+#define segtree_rson  m+1,r,rt<<1|1
+// int T.l, T.r; T.up(const T& a, const T& b); T.down(T& a, T& b); T.update(UT v); T.build(); T.merge(const T& t);
+template<typename T, typename UT=int> 
+struct SEGTREE {
+    vector<T> tree;
+
+    SEGTREE(int N): tree(N*4) { build(1, N); }
+    void build(int l, int r, int rt=1){
+        auto& t = tree[rt];
+        t.l = l;
+        t.r = r;
+        if(l == r) {
+            t.build();
+            return;
+        }
+        int m = (t.l + t.r)/2;
+        build(segtree_lson);
+        build(segtree_rson);
+        t.up(tree[rt<<1], tree[rt<<1|1]);
+    }
+    void update(UT v, int l, int r, int rt=1){ // range[1..N]
+        auto& t = tree[rt];
+        if(t.l == l && t.r == r) { t.update(v); return; }
+        if(t.l == t.r)return;
+        t.down(tree[rt<<1], tree[rt<<1|1]);
+        int m = (t.l + t.r)/2;
+        if(r <= m) update(v, l, r, rt<<1);
+        else if(l > m) update(v, l, r, rt<<1|1);
+        else {
+            update(v, segtree_lson);
+            update(v, segtree_rson);
+        }
+        t.up(tree[rt<<1], tree[rt<<1|1]);
+    }
+    void run(T& ret, int l, int r, int rt=1){ // range[1..N]
+        auto& t = tree[rt];
+        if(l == t.l && r == t.r){
+            ret = t;
+            return;
+        }
+        t.down(tree[rt<<1], tree[rt<<1|1]);
+        int m = (t.l + t.r)/2;
+        if(r <= m) run(ret, l, r, rt<<1);
+        else if(l > m) run(ret, l, r, rt<<1|1);
+        else {
+            T b;
+            run(ret, segtree_lson);
+            run(b, segtree_rson);
+            ret.merge(b);
+        }
+    }
+};
+
+//+matrix
+template<typename T=int>
+struct MATRIX : vector< vector<T> > {
+    T mod;
+    MATRIX(int M, int N, T v = 0, T mod = 0) : vector< vector<T> >(M), mod(mod) {
+        for(auto& u : *this) u.resize(N, v);
+    }
+    MATRIX(const MATRIX& t) : vector< vector<T> >( t.size() ), mod(t.mod) {
+        rep(i, 0, t.size()){
+            (*this)[i].assign( all(t[i]) );
+        }
+    }
+    MATRIX& operator=(const MATRIX& t){
+        this->resize(t.size());
+        rep(i, 0, t.size()){
+            (*this)[i].assign( all(t[i]) );
+        }
+        return *this;
+    }
+    MATRIX& operator+=(const MATRIX& t){
+        rep(y, 0, t.size())rep(x, 0, t[y].size()){
+            (*(this))[y][x] += t[y][x];
+        }
+        return *this;
+    }
+    MATRIX operator+(const MATRIX& t) const {
+        MATRIX r(*this);
+        return r += t;
+    }
+    MATRIX& operator-=(const MATRIX& t){
+        rep(y, 0, t.size())rep(x, 0, t[y].size()){
+            (*(this))[y][x] -= t[y][x];
+        }
+        return *this;
+    }
+    MATRIX operator-(const MATRIX& t) const {
+        MATRIX r(*this);
+        return r -= t;
+    }
+    MATRIX& operator*=(T v){
+        rep(y, 0, this->size())rep(x, 0, (*this)[y].size()){
+            (*this)[y][x] *= v;
+        }
+        return *this;
+    }
+    MATRIX operator*(T v) const {
+        MATRIX r(*this);
+        return r *= v;
+    }
+    MATRIX operator*(const MATRIX& t) const {
+        MATRIX r(this->size(), t[0].size(), 0, mod);
+        rep(y, 0, this->size())rep(x, 0, t.size())rep(z, 0, t[y].size()){
+            if(mod) r[y][z] = (r[y][z] + (*this)[y][x]*t[x][z]) % mod;
+            else r[y][z] = r[y][z] + (*this)[y][x]*t[x][z];
+        }
+        return r;
+    }
+    MATRIX pow(ll v) const {
+        MATRIX a(*this);
+        MATRIX t(a.size(), a.size(), 0, mod);
+        rep(i, 0, a.size()) t[i][i] = 1;
+        while(v > 0){
+            if(v & 1) t = t * a;
+            a = a * a;
+            v >>= 1;
+        }
+        return t;
+    }
+};
+
+
+
+//+bignum
+template<int CNTN=500>
+struct BigNum {
+    const int MAXN = 9999;
+    const int DLEN = 4;
+
+	int a[CNTN];    //可以控制大数的位数 
+	int len;       //大数长度
+	BigNum(): len(0) { memset(a,0,sizeof(a)); }   //构造函数
+	BigNum(int b){ //将一个int类型的变量转化为大数
+        len = 0;
+        memset(a, 0, sizeof(a));
+        while(b > MAXN) {
+            a[len++] = b % (MAXN + 1);
+            b = b / (MAXN + 1);
+        }
+        if(b) a[len++] = b;
+    }
+	BigNum(const char* str){     //将一个字符串类型的变量转化为大数
+        set(str);
+    }
+	BigNum(const BigNum & t): len(t.len) {  //拷贝构造函数
+        memcpy(a, t.a, sizeof(a));
+    }
+	BigNum &operator=(const BigNum & t){   //重载赋值运算符，大数之间进行赋值运算
+        len = t.len;
+        memcpy(a, t.a, sizeof(a));
+        return *this;
+    }
+
+    BigNum& set(const char* str) {
+        int t,k,index,l,i;
+        memset(a, 0, sizeof(a));
+        l = min(CNTN*DLEN-1, (int)strlen(str));
+        len = l / DLEN;
+        if(l % DLEN) len++;
+        index=0;
+        for(i=l-1;i>=0;i-=DLEN){
+            t=0;
+            k=i-DLEN+1;
+            if(k<0) k=0;
+            for(int j=k;j<=i;j++) t=t*10+str[j]-'0';
+            a[index++]=t;
+        }
+        return *this;
+    }
+
+	BigNum operator+(const BigNum & t) const {   //重载加法运算符，两个大数之间的相加运算 
+        BigNum r(*this);
+        int mlen = min(CNTN-1, max(len, t.len));
+        rep(i, 0, mlen){
+            r.a[i] += t.a[i];
+            if(r.a[i] > MAXN){
+                r.a[i] -= MAXN;
+                r.a[i+1] += 1;
+            }
+        }
+        if(r.a[mlen]) mlen += 1;
+        r.len = mlen;
+        return r;
+    }
+	BigNum operator-(const BigNum& T) const {   //重载减法运算符，两个大数之间的相减运算 
+        int i,j,big;
+        bool flag;
+        BigNum t1,t2;
+        if(*this>T) {
+            t1=*this;
+            t2=T;
+            flag=0;
+        } else {
+            t1=T;
+            t2=*this;
+            flag=1;
+        }
+        big=t1.len;
+        for(i = 0 ; i < big ; i++) {
+            if(t1.a[i] < t2.a[i]){ 
+                j = i + 1; 
+                while(t1.a[j] == 0)
+                    j++; 
+                t1.a[j--]--; 
+                while(j > i)
+                    t1.a[j--] += MAXN;
+                t1.a[i] += MAXN + 1 - t2.a[i]; 
+            } 
+            else
+                t1.a[i] -= t2.a[i];
+        }
+        t1.len = big;
+        while(t1.a[len - 1] == 0 && t1.len > 1) {
+            t1.len--; 
+            big--;
+        }
+        if(flag) t1.a[big-1]=0-t1.a[big-1];
+        return t1; 
+    }
+	BigNum operator/(const int& b) const {    //重载除法运算符，大数对一个整数进行相除运算
+        BigNum ret; 
+        int i,down = 0;   
+        for(i = len - 1 ; i >= 0 ; i--)
+        { 
+            ret.a[i] = (a[i] + down * (MAXN + 1)) / b; 
+            down = a[i] + down * (MAXN + 1) - ret.a[i] * b; 
+        } 
+        ret.len = len; 
+        while(ret.a[ret.len - 1] == 0 && ret.len > 1)
+            ret.len--; 
+        return ret; 
+    }
+ 
+	int    operator%(int b) const {    //大数对一个int类型的变量进行取模运算    
+        int d=0;
+        for (int i = len-1; i>=0; i--) {
+            d = ((d * (MAXN+1))% b + a[i]) % b;
+        }
+        return d;
+    }
+
+	BigNum operator*(const BigNum& T) const {   //重载乘法运算符，两个大数之间的相乘运算 
+        BigNum ret; 
+        int i, j;
+        for(i = 0 ; i < len ; i++){ 
+            int up = 0;
+            for(j = 0; j < T.len; j++){ 
+                int temp = a[i] * T.a[j] + ret.a[i + j] + up; 
+                if(temp > MAXN) { 
+                    int temp1 = temp - temp / (MAXN + 1) * (MAXN + 1); 
+                    up = temp / (MAXN + 1); 
+                    ret.a[i + j] = temp1;
+                } else { 
+                    up = 0; 
+                    ret.a[i + j] = temp; 
+                } 
+            }
+            if(up != 0) ret.a[i + j] = up; 
+        } 
+        ret.len = i + j; 
+        while(ret.len && ret.a[ret.len-1] == 0) ret.len--; 
+        return ret; 
+    }
+
+	BigNum pow(int n) const {    //大数的n次方运算
+        if(n <= 0)return 1;
+        if(n == 1)return *this;
+        BigNum t,ret(1);
+        int m=n;
+        while(m>1) {
+            t=*this;
+            int i;
+            for(i=1;i<<1<=m;i<<=1)t=t*t;
+            m-=i;
+            ret=ret*t;
+            if(m==1)ret=ret*(*this);
+        }
+        return ret;
+    }
+
+    int compare(const BigNum & T) const { //大数和另一个大数的大小比较
+        if(len < T.len) return -1;
+        if(len > T.len) return 1;
+        int idx = len - 1;
+        while(idx >= 0 && a[idx] == T.a[idx]) idx--;
+        if(idx < 0) return 0;
+        return a[idx]<T.a[idx] ? -1 : 1;
+    }
+
+	bool   operator>(const BigNum & T) const { 
+        return compare(T) > 0;
+    }
+	bool   operator<(const BigNum & T) const { 
+        return compare(T) < 0;
+    }
+	bool   operator>=(const BigNum & T) const { 
+        return compare(T) >= 0;
+    }
+	bool   operator<=(const BigNum & T) const { 
+        return compare(T) <= 0;
+    }
+	bool   operator==(const BigNum & T) const { 
+        return compare(T) == 0;
+    }
+
+	friend istream& operator>>(istream& is,  BigNum& t) {   //重载输入运算符
+        char str[CNTN*4+1];
+        is >> str;
+        t.set(str);
+        return is;
+    }
+
+	friend ostream& operator<<(ostream& out,  BigNum& t){   //重载输出运算符
+        if(t.len == 0) {
+            out << '0';
+            return out;
+        }
+        out << t.a[t.len-1];
+        if(t.len < 2) return out;
+        per(i, 0, t.len-1) out << setw(4) << setfill('0') << t.a[i];
+        return out;
+    }
+}; 
+
 
 //+fib
 template<typename T=int>
-void fib(T max, vector<T>& f)
-{
+void fib1(T max, vector<T>& f){
     f.pb(0);
     f.pb(1);
     int last = f.size() - 1;
@@ -389,6 +867,16 @@ void fib(T max, vector<T>& f)
         last += 1;
         if(f[last] > max) break;
     }
+}
+ll fib2(ll n, ll mod){
+    MATRIX<ll> P(2, 2, 1, mod);
+    P[0][0] = 0;
+    P = P.pow(n);
+    return P[0][1];
+}
+int fibf(ll n, int c){
+    double s = log10(1.0/sqrt(5)) + (double)n*log10((1.0+sqrt(5))/2.0);
+    return (int)(pow(10, s -(int)s + c - 1));
 }
 
 
