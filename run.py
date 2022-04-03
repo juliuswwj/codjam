@@ -1,10 +1,10 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import os, sys, subprocess, select
 
 
 if len(sys.argv) < 2:
-    print 'usage: run.py num [options]'
+    print('usage: run.py num [options]')
     sys.exit(1)
     
 tid = ''
@@ -13,13 +13,14 @@ if '.' in qid:
     qid = qid.split('.')[0]
 
 cwd = os.getcwd().split('/')[-1]
-if cwd in ('hdu', 'poj', 'zoj'):
+if cwd in ('hdu', 'poj', 'zoj', 'leetcode'):
     if int(qid) < 10:
-        print 'E: wrong problem %s' % qid
+        print('E: wrong problem %s' % qid)
+        sys.exit(1)
 else:
     year = int( cwd[:4] )
     if year < 2010 or year > 2030:
-        print 'E: wrong year %d' % year
+        print('E: wrong year %d' % year)
         sys.exit(1)
 
     if year < 2018:
@@ -27,13 +28,13 @@ else:
         qid = qid[0].lower()
     
     if 'abcdef'.find(qid) < 0:
-        print 'E: qid should be abcdef'
+        print('E: qid should be abcdef')
         sys.exit(1)
     
 fcpp = '%s.cpp' % qid
 fpy = '%s.py' % qid
 ftxt = '%s%s.txt' % (qid, tid)
-fbin = '%s.bin' % qid
+fexe = '%s.exe' % qid
 fttpy = '%s-tt.py' % qid
 
 if not os.path.exists(fpy):
@@ -73,13 +74,13 @@ if not os.path.exists(fpy):
         with open(fcpp, 'w') as f:
             f.write(txt)
             
-    opts = '-O2'
+    opts = '-std=c++17'
     if '-g' in sys.argv: opts = '-g'
-    if os.system('g++ %s -o %s %s' % (opts, fbin, fcpp)) != 0:
+    if os.system('g++ %s -o %s %s' % (opts, fexe, fcpp)) != 0:
         sys.exit(1)
         
 else:
-    fbin = fpy
+    fexe = fpy
         
 
 fdownload = '%s/Downloads/%s-%s-practice.in' % (os.environ['HOME'], qid.upper(), 'small' if tid == 's' else 'large')
@@ -87,7 +88,7 @@ if os.path.exists(fdownload):
     os.rename(fdownload, ftxt)
 
 if os.path.exists(ftxt):
-    cmd = './%s <%s' % (fbin, ftxt)
+    cmd = './%s <%s' % (fexe, ftxt)
     if tid != '': cmd += ' >%s' % ftxt.replace('.txt', '.out')
     os.system(cmd)
     sys.exit(0)
@@ -97,40 +98,47 @@ if os.path.exists(fdownload):
     os.rename(fdownload, fttpy)
     
 if os.path.exists(fttpy):
-    print '!RUN interactive test'
+    print('!RUN interactive test')
     
     with open(fttpy, 'r') as f:
         lines = f.read()
 
-    args = ['./' + fbin]
-    if fbin.endswith('.py'): args = ['/usr/bin/python', fbin]
+    args = ['./' + fexe]
+    if fexe.endswith('.py'): args = ['/usr/bin/python3', fexe]
     
     if 'subprocess.Popen' in lines:
         os.system('python %s %s' % (fttpy, ' '.join(args)))
         sys.exit(0)
     
-    ptt = subprocess.Popen(['/usr/bin/python', fttpy, "0"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    ptt = subprocess.Popen(['/usr/bin/python3', fttpy, "0"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     pbin = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     
     ploop = select.poll()
     ploop.register(pbin.stdout.fileno(), select.POLLIN)
     ploop.register(ptt.stdout.fileno(), select.POLLIN)
-    while True:
+    end = False
+    while not end:
         if pbin.poll() or ptt.poll(): break
         for fd,evt in ploop.poll():
-            #print '!', fd, evt
+            #if '-d' in sys.argv: print('!', fd, evt)
             if fd == pbin.stdout.fileno():
                 b = pbin.stdout.readline()
-                if len(b) == 0: break
-                #print ">", b
+                if len(b) == 0:
+                    end = True
+                    break
+                if '-d' in sys.argv: print(">", b)
                 ptt.stdin.write(b)
+                ptt.stdin.flush()
             if fd == ptt.stdout.fileno():
                 b = ptt.stdout.readline()
-                if len(b) == 0: break
-                #print "<", b
+                if len(b) == 0:
+                    end = True
+                    break
+                if '-d' in sys.argv: print("<", b)
                 pbin.stdin.write(b)
+                pbin.stdin.flush()
     sys.exit(0)
 
-print >>sys.stderr, 'no %s or %s found' % (ftxt, fttpy)
+print('E: no %s or %s found' % (ftxt, fttpy))
 sys.exit(1)
 

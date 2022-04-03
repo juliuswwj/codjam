@@ -1,20 +1,5 @@
 //+base
-#include <cstring>
-#include <cstdio>
-#include <cstdlib>
-#include <cmath>
-#include <vector>
-#include <map>
-#include <list>
-#include <queue>
-#include <stack>
-#include <cctype>
-#include <string>
-#include <utility>
-#include <iostream>
-#include <algorithm>
-#include <limits>
-#include <functional>
+#include <bits/stdc++.h>
 using namespace std;
 #define rep(i,a,n) for (int i=a;i<n;i++)
 #define per(i,a,n) for (int i=n-1;i>=a;i--)
@@ -27,6 +12,39 @@ using namespace std;
 typedef vector<int> VI;
 typedef long long ll;
 typedef pair<int,int> PII;
+
+//+debug
+template<class T>
+ostream& operator<<(ostream& os, const vector<T>& vs) {
+    os << "[";
+    bool first = true;
+    for(auto v: vs) {
+        if(!first) os << ", ";
+        first = false;
+        os << v;
+    }
+    os << "]";
+    return os;
+}
+
+template<class T, class V>
+ostream& operator<<(ostream& os, const pair<T,V>& p) {
+    os << p.first << ":" << p.second;
+    return os;
+}
+
+template<class T, class V>
+ostream& operator<<(ostream& os, const map<T,V>& vs) {
+    os << "{";
+    bool first = true;
+    for(auto v: vs) {
+        if(!first) os << ", ";
+        first = false;
+        os << v;
+    }
+    os << "}";
+    return os;
+}
 
 //+gcd
 ll gcd(ll a,ll b) { return b?gcd(b,a%b):a;}
