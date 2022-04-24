@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import os, sys, subprocess, select
+import os, sys, subprocess, time
 
 
 if len(sys.argv) < 2:
@@ -111,32 +111,13 @@ if os.path.exists(fttpy):
         sys.exit(0)
     
     ptt = subprocess.Popen(['/usr/bin/python3', fttpy, "0"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-    pbin = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    pbin = subprocess.Popen(args, stdin=ptt.stdout, stdout=ptt.stdin)
     
-    ploop = select.poll()
-    ploop.register(pbin.stdout.fileno(), select.POLLIN)
-    ploop.register(ptt.stdout.fileno(), select.POLLIN)
-    end = False
-    while not end:
-        if pbin.poll() or ptt.poll(): break
-        for fd,evt in ploop.poll():
-            #if '-d' in sys.argv: print('!', fd, evt)
-            if fd == pbin.stdout.fileno():
-                b = pbin.stdout.readline()
-                if len(b) == 0:
-                    end = True
-                    break
-                if '-d' in sys.argv: print(">", b)
-                ptt.stdin.write(b)
-                ptt.stdin.flush()
-            if fd == ptt.stdout.fileno():
-                b = ptt.stdout.readline()
-                if len(b) == 0:
-                    end = True
-                    break
-                if '-d' in sys.argv: print("<", b)
-                pbin.stdin.write(b)
-                pbin.stdin.flush()
+    while True:
+        pbin.poll()
+        ptt.poll()
+        if pbin.returncode != None or ptt.returncode != None: break
+        time.sleep(1)
     sys.exit(0)
 
 print('E: no %s or %s found' % (ftxt, fttpy))
