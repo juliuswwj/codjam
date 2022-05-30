@@ -545,6 +545,35 @@ struct UNION {
     }
 };
 
+//+bit
+template<typename T=int>
+struct BIT {
+    int n;
+    vector<T> t;
+
+    BIT<T> (int _n): n(_n), t(n+1) { }
+
+    void add(int i, T x){
+        while (i <= n){
+            t[i] += x;
+            i += i & -i;
+        }
+    }
+
+    T sum(int i){
+        T ans = 0;
+        while (i > 0){
+            ans += t[i];
+            i -= i & -i;
+        }
+        return ans;
+    }
+
+    T sum(int i, int j){
+        return sum(j) - sum(i - 1);
+    }
+};
+
 //+segtree
 #define segtree_lson  l,m,rt<<1
 #define segtree_rson  m+1,r,rt<<1|1
