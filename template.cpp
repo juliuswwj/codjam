@@ -102,9 +102,9 @@ void getfactor(int n, map<int, int>& fs){
 ll pow(ll x, ll p, ll mod) {
     ll ans = 1;
     while (p > 0) {
-        if ((p & 1) == 1) ans = (ans * x) % mod;
+        if ((p & 1) == 1) ans = ((__int128)ans * x) % mod;
         p >>= 1;
-        x = (x * x) % mod;
+        x = ((__int128)x * x) % mod;
     }
     return ans % mod;
 }
